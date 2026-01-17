@@ -1,0 +1,227 @@
+<!doctype html>
+<html lang="es-CO">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="theme-color" content="#0C41C4" />
+  <title>Musicala · Buscador de Docentes</title>
+
+  <!-- Tipografías (pueden cambiarse luego) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- CSS -->
+  <link rel="stylesheet" href="./styles.css" />
+
+  <!-- Favicon (opcional) -->
+  <link rel="icon" href="./assets/favicon.png" />
+</head>
+
+<body>
+  <!-- Skip link accesible -->
+  <a class="skip-link" href="#main">Saltar al contenido</a>
+
+  <!-- Topbar -->
+  <header class="topbar">
+    <div class="topbar__inner">
+      <div class="brand">
+        <img class="brand__logo" src="./assets/logo.png" alt="Musicala" />
+        <div class="brand__text">
+          <div class="brand__title">Buscador de Docentes</div>
+          <div class="brand__subtitle">Filtra, encuentra, abre detalle y copia lo necesario (sin drama).</div>
+        </div>
+      </div>
+
+      <div class="topbar__actions">
+        <button id="btnRefresh" class="btn btn--ghost" type="button" title="Actualizar datos">
+          <span class="btn__icon" aria-hidden="true">⟳</span>
+          Actualizar
+        </button>
+
+        <div id="syncBadge" class="badge" role="status" aria-live="polite" title="Estado de datos">
+          <span class="badge__dot" aria-hidden="true"></span>
+          <span class="badge__text">Listo</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main id="main" class="wrap">
+    <!-- Panel de controles -->
+    <section class="panel">
+      <div class="panel__row panel__row--top">
+        <!-- Search -->
+        <div class="field field--search">
+          <label class="field__label" for="q">Buscar</label>
+          <div class="field__control">
+            <span class="field__icon" aria-hidden="true">🔎</span>
+            <input
+              id="q"
+              name="q"
+              type="search"
+              class="input"
+              placeholder="Nombre, instrumento, sede, disponibilidad…"
+              autocomplete="off"
+              spellcheck="false"
+            />
+            <button id="btnClearSearch" class="icon-btn" type="button" title="Limpiar búsqueda" aria-label="Limpiar búsqueda">
+              ✕
+            </button>
+          </div>
+          <div class="field__hint" id="searchHint">
+            Tip: escribe dos cosas, tipo <strong>“piano sábado”</strong> o <strong>“danza sede”</strong>.
+          </div>
+        </div>
+
+        <!-- Quick stats -->
+        <div class="kpis" aria-label="Resumen de resultados">
+          <div class="kpi">
+            <div class="kpi__label">Total</div>
+            <div id="kpiTotal" class="kpi__value">—</div>
+          </div>
+          <div class="kpi">
+            <div class="kpi__label">Mostrando</div>
+            <div id="kpiShowing" class="kpi__value">—</div>
+          </div>
+          <div class="kpi">
+            <div class="kpi__label">Actualizado</div>
+            <div id="kpiUpdatedAt" class="kpi__value">—</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Filtros dinámicos (app.js los construye según config.js) -->
+      <div class="panel__row panel__row--filters">
+        <div class="filters__header">
+          <div class="filters__title">Filtros</div>
+          <div class="filters__actions">
+            <button id="btnResetFilters" class="btn btn--ghost" type="button" title="Quitar filtros">
+              Limpiar filtros
+            </button>
+          </div>
+        </div>
+
+        <div id="filters" class="filters" aria-label="Filtros de docentes">
+          <!-- app.js inyecta aquí selects/chips -->
+          <div class="filters__placeholder">
+            Cargando filtros…
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Tabla -->
+    <section class="tablecard" aria-label="Listado de docentes">
+      <div class="tablecard__head">
+        <div class="tablecard__title">
+          Resultados
+          <span id="resultPill" class="pill" aria-live="polite">—</span>
+        </div>
+
+        <div class="tablecard__tools">
+          <button id="btnDense" class="btn btn--ghost" type="button" title="Cambiar densidad de tabla">
+            Compacto
+          </button>
+        </div>
+      </div>
+
+      <div class="tablewrap" role="region" aria-label="Tabla de docentes (desplazable)">
+        <table id="tbl" class="table">
+          <thead id="tblHead">
+            <!-- app.js pinta el thead según A–K + AC -->
+          </thead>
+          <tbody id="tblBody">
+            <tr class="row-skeleton">
+              <td colspan="99">
+                <div class="skeleton">
+                  <div class="skeleton__bar"></div>
+                  <div class="skeleton__bar"></div>
+                  <div class="skeleton__bar"></div>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Footer tabla -->
+      <div class="tablecard__foot">
+        <div class="muted" id="tableHint">
+          Click en un docente para ver detalle y copiar info.
+        </div>
+
+        <div class="pager" aria-label="Paginación">
+          <button id="btnPrev" class="btn btn--ghost" type="button" disabled>←</button>
+          <div class="pager__info">
+            <span id="pageInfo">—</span>
+          </div>
+          <button id="btnNext" class="btn btn--ghost" type="button" disabled>→</button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Drawer Detalle (panel lateral) -->
+  <aside id="drawer" class="drawer" aria-hidden="true">
+    <div class="drawer__overlay" data-close="drawer" tabindex="-1"></div>
+
+    <div class="drawer__panel" role="dialog" aria-modal="true" aria-labelledby="drawerTitle">
+      <div class="drawer__head">
+        <div class="drawer__titlewrap">
+          <div class="drawer__eyebrow">Detalle del docente</div>
+          <h2 id="drawerTitle" class="drawer__title">—</h2>
+        </div>
+
+        <button class="icon-btn icon-btn--close" type="button" data-close="drawer" aria-label="Cerrar detalle">✕</button>
+      </div>
+
+      <div class="drawer__body">
+        <!-- Acciones principales (copiar / whatsapp si aplica) -->
+        <div class="drawer__actions">
+          <button id="btnCopySummary" class="btn btn--primary" type="button">
+            Copiar resumen
+          </button>
+          <button id="btnCopyContact" class="btn btn--ghost" type="button" disabled title="No hay dato de contacto disponible">
+            Copiar contacto
+          </button>
+          <a id="btnWhatsApp" class="btn btn--ghost" href="#" target="_blank" rel="noopener" aria-disabled="true">
+            WhatsApp
+          </a>
+        </div>
+
+        <!-- Chips contextuales -->
+        <div id="drawerChips" class="chips" aria-label="Etiquetas">
+          <!-- app.js rellena -->
+        </div>
+
+        <!-- Contenido (key/value) -->
+        <div class="drawer__grid" id="drawerGrid" aria-label="Información del docente">
+          <!-- app.js rellena -->
+        </div>
+
+        <!-- Nota -->
+        <div class="note">
+          <div class="note__icon" aria-hidden="true">💡</div>
+          <div class="note__text">
+            Si algo se ve raro, dale <strong>Actualizar</strong>. Si sigue raro, el TSV es el culpable (como siempre).
+          </div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Toasts -->
+  <div id="toasts" class="toasts" aria-live="polite" aria-relevant="additions text"></div>
+
+  <!-- Scripts -->
+  <script src="./config.js"></script>
+  <script src="./app.js"></script>
+
+  <noscript>
+    <div class="noscript">
+      Este aplicativo necesita JavaScript para funcionar. Sin eso no hay filtros, no hay tabla, no hay felicidad.
+    </div>
+  </noscript>
+</body>
+</html>
